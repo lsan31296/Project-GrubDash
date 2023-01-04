@@ -10,6 +10,20 @@ function list(req, res) {
     res.json({ data: orders });
 }
 
+function read(req, res) {
+    res.json({ data: res.locals.order });
+}
+
+function orderExists(req, res, next) {
+    const { orderId } = req.params;
+    const foundOrder = orders.find((order) => order.id === orderId);
+    if (foundOrder) {
+        res.locals.order = foundOrder;
+        next();
+    }
+    next({ status: 404, message: `Order does not exist: ${orderId}`});
+}
+
 function bodyDataHas(propertyName) {
     return function(req, res, next) {
         const { data = {} } = req.body;
@@ -67,4 +81,5 @@ module.exports = {
         dishQuantityIsValid,
         create
     ],
+    read: [orderExists, read],
 }
