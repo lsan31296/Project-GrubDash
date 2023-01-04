@@ -17,7 +17,7 @@ function bodyDataHas(propertyName) {
         if(data[propertyName]) {
             return next();
         }
-        next({ status: 400, message: `Must include a ${propertyName}`});
+        next({ status: 400, message: `Dish must include a ${propertyName}`});
     };
 }
 
