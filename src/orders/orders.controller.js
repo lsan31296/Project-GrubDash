@@ -1,3 +1,4 @@
+const { Stats } = require("fs");
 const path = require("path");
 // Use the existing order data
 const orders = require(path.resolve("src/data/orders-data"));
@@ -68,8 +69,34 @@ function dishQuantityIsValid(req, res, next) {
     next();//this statement cannot go inside forEach() as it will 'create' any dish that does have a valid quantity, even if some other dish in the dishes array doesn't.
 }
 
+function update(req, res) {
+    const { data: { deliverTo, mobileNumber, status, dishes } = {} } = req.body;
+    res.locals.order.deliverTo = deliverTo;
+    res.locals.order.mobileNumber = mobileNumber;
+    res.locals.order.status = status;
+    res.locals.order.dishes = dishes;
+    res.json({ data: res.locals.order });
+}
+
 function statusIsValid(req, res, next) {
-    //TODO: Implement logic for validating the status is either delivered, out-for-delivery, pending, preparing
+    const { data: { status } = {} } = req.body;
+    const possibleStatus = ["delivered", "out-for-delivery", "pending", "preparing"];
+    if (!status || status.length === 0 || !possibleStatus.includes(status)) {
+        return next({ status: 400, message: "Order must have a status of pending, preparing, out-for-delivery, delivered" });
+    }
+    if (status === "delivered") {
+        return next({ status: 400, message: "A delivered order cannot be changed"});
+    }
+    next();
+}
+
+function idPropertyIsValid(req, res, next) {
+    const { orderId } = req.params;
+    const { data: { id } = {} } = req.body;
+    if (id && id === orderId || !id) {
+        return next();
+    }
+    next({ status: 400, message: `Order id does not match route id. Order: ${id}, Route: ${orderId}.`});
 }
 
 module.exports = {
@@ -82,4 +109,17 @@ module.exports = {
         create
     ],
     read: [orderExists, read],
+    update: [
+        orderExists,
+        bodyDataHas("deliverTo"),
+        bodyDataHas("mobileNumber"),
+        bodyDataHas("status"),
+        dishPropertyIsValid,
+        dishQuantityIsValid,
+        idPropertyIsValid,
+        statusIsValid,
+        update
+    ],
 }
+
+//NEED TO WORK ON 'PUT' request for path '/orders/:orderId'
