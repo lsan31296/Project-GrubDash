@@ -99,6 +99,20 @@ function idPropertyIsValid(req, res, next) {
     next({ status: 400, message: `Order id does not match route id. Order: ${id}, Route: ${orderId}.`});
 }
 
+function destroy(req, res) {
+    const { orderId } = req.params;
+    const index = orders.findIndex(order => order.id === orderId);
+    const postDeleteList = orders.splice(index, 1);
+    res.sendStatus(204);
+}
+
+function statusNotValidForDeletion(req, res, next) {
+    if (res.locals.order.status !== "pending") {
+        return next({ status: 400, message: "An order cannot be deleted unless it is pending."});
+    }
+    next();
+}
+
 module.exports = {
     list,
     create: [
@@ -120,6 +134,5 @@ module.exports = {
         statusIsValid,
         update
     ],
+    delete: [orderExists, statusNotValidForDeletion, destroy],
 }
-
-//NEED TO WORK ON 'PUT' request for path '/orders/:orderId'
